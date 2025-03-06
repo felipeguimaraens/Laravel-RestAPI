@@ -62,7 +62,32 @@ class AuthController extends Controller
         ]);
     }
 
-    // Fazer logout (revogar token)
+    public function update(Request $request, User $user)
+    {
+        if ($request->user()->id !== $user->id) {
+            return response()->json(['message' => 'Não autorizado.'], 403);
+        }
+
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'telefone' => 'sometimes|string|max:15',
+            'cpf' => 'sometimes|string|max:11|unique:users,cpf,' . $user->id,
+            'password' => 'sometimes|string|min:8|confirmed',
+        ]);
+
+        if ($request->has('password')) {
+            $request->merge(['password' => Hash::make($request->password)]);
+        }
+
+        $user->update($request->all());
+
+        return response()->json([
+            'message' => 'Usuário atualizado com sucesso.',
+            'user' => $user,
+        ]);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -72,7 +97,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Obter informações do usuário autenticado
     public function user(Request $request)
     {
         return response()->json($request->user());
